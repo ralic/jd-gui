@@ -4,29 +4,29 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.netflix.nebula:gradle-ospackage-plugin:2.2.6'
-        classpath 'org.spockframework:spock-core:1.0-groovy-2.3'
+        classpath 'com.netflix.nebula:gradle-ospackage-plugin:4.4.0'
+        classpath 'org.spockframework:spock-core:1.1-groovy-2.4'
     }
 }
 
 apply plugin: 'java'
 apply plugin: 'distribution'
-apply plugin: 'nebula.os-package'
+apply plugin: "nebula.ospackage"
 
 // Common configuration //
 allprojects {
-    version='1.4.0'
+    version='1.5.1'
 
     apply plugin: 'eclipse'
     apply plugin: 'idea'
 
     tasks.withType(JavaCompile) {
         sourceCompatibility = '1.7'
-        targetCompatibility = '1.7'
+        targetCompatibility = '1.8'
     }
     tasks.withType(GroovyCompile) {
         sourceCompatibility = '1.7'
-        targetCompatibility = '1.7'
+        targetCompatibility = '1.8'
     }
 
     repositories {
@@ -71,14 +71,14 @@ jar {
         attributes 'Main-Class': 'org.jd.gui.App',
                    'SplashScreen-Image': 'org/jd/gui/images/jd_icon_128.png',
                    'JD-GUI-Version': project.version,
-                   'JD-Core-Version': '0.7.1'
+                   'JD-Core-Version': '0.7.0'
     }
     from deps
     exclude 'META-INF/services/org.jd.gui.spi.*'
     duplicatesStrategy DuplicatesStrategy.EXCLUDE
+    def tmpSpiDir = file('build/tmp/spi')
     doFirst {
         // Create temporary directory
-        def tmpSpiDir = file('build/tmp/spi')
         tmpSpiDir.deleteDir()
         tmpSpiDir.mkdirs()
         // Copy and merge SPI config files
@@ -91,10 +91,10 @@ jar {
                 }
             }
         }
-        // Add to JAR file
-        into('META-INF/services') {
-            from tmpSpiDir
-        }
+    }
+    // Add to JAR file
+    into('META-INF/services') {
+        from tmpSpiDir
     }
 }
 
@@ -166,7 +166,7 @@ ospackage {
     summary = 'A Java Decompiler'
     url = 'https://github.com/java-decompiler/jd-gui'
 
-    into '/opt/' + project.name
+    into '/usr/local/opt/jd-gui/bin' + project.name
     from ('build/libs/') {
         fileMode = 0755
     }
@@ -175,8 +175,8 @@ ospackage {
     }
     from 'LICENSE', 'NOTICE', 'README.md'
 
-    postInstall 'cd /opt/'+ project.name+'; ln -s ./jd-gui-'+project.version+'.jar ./jd-gui.jar; xdg-icon-resource install --size 128 --novendor ./jd_icon_128.png jd-gui; xdg-desktop-menu install ./*.desktop'
-    preUninstall 'cd /opt/'+ project.name+'; rm -f ./jd-gui.jar; rm -fr ./ext; xdg-desktop-menu uninstall ./*.desktop'
+    postInstall 'cd /usr/local/opt/jd-gui/bin'+ project.name+'; ln -s ./jd-gui-'+project.version+'.jar ./jd-gui.jar; xdg-icon-resource install --size 128 --novendor ./jd_icon_128.png jd-gui; xdg-desktop-menu install ./*.desktop'
+    preUninstall 'cd /usr/local/opt/jd-gui/bin'+ project.name+'; rm -f ./jd-gui.jar; rm -fr ./ext; xdg-desktop-menu uninstall ./*.desktop'
 }
 
 installOsxDist.dependsOn jar, copyAndReplaceVariablesInInfoPlist
